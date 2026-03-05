@@ -145,6 +145,8 @@ create table public.users (
   reset_token character varying(64) null,
   reset_token_expiry timestamp without time zone null,
   is_approved boolean not null default true,
+google_id text null,
+  picture text null,
   created_at timestamp with time zone not null default (now() AT TIME ZONE 'utc'::text),
   constraint users_pkey primary key (id),
   constraint users_email_key unique (email),

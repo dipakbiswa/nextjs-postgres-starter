@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { connection } from "@/util/db";
 import { exchangeCodeForTokens, getGoogleUserInfo } from "@/lib/oogle-oauth";
 import jwt from "jsonwebtoken";
-import MailerLite from "@mailerlite/mailerlite-nodejs";
 
 export async function GET(request: NextRequest) {
   try {
@@ -96,29 +95,6 @@ export async function GET(request: NextRequest) {
       );
 
       user = insertResult.rows[0];
-
-      const mailerlite = new MailerLite({
-        api_key: process.env.MAILERLITE_API_KEY || "",
-      });
-
-      const params = {
-        email: googleUser.email,
-        fields: {
-          name: googleUser.name,
-        },
-        groups: [
-          process.env.MAILERLITE_CUSTOMER_GROUP_ID || "168211870236280261",
-        ],
-      };
-
-      await mailerlite.subscribers
-        .createOrUpdate(params)
-        .then((response) => {
-          console.log(response.data);
-        })
-        .catch((error) => {
-          if (error.response) console.log(error.response.data);
-        });
     }
 
     // Check is banned

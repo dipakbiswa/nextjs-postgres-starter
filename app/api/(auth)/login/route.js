@@ -11,45 +11,30 @@ export async function POST(request) {
     if (!email || !password) {
       return NextResponse.json(
         { message: "Email and password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Find user by email - include is_approved in the query
     const users = await connection.query(
       "SELECT * FROM users WHERE email = $1 AND is_verified = true",
-      [email]
+      [email],
     );
 
     if (users.rows.length === 0) {
       return NextResponse.json(
         { message: "User not found or email not verified." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const user = users.rows[0];
 
     // Check the approval status
-    if (user.is_approved === 0) {
+    if (user.is_approved === false) {
       return NextResponse.json(
         { message: "Your account is pending approval." },
-        { status: 403 }
-      );
-    }
-
-    if (user.is_approved === 3) {
-      return NextResponse.json(
-        { message: "Your account has been banned. Please contact support." },
-        { status: 403 }
-      );
-    }
-
-    // Only allow login if is_approved is 1 (approved)
-    if (user.is_approved !== 1) {
-      return NextResponse.json(
-        { message: "Your account status does not allow login." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -59,7 +44,7 @@ export async function POST(request) {
     if (!isPasswordValid) {
       return NextResponse.json(
         { message: "Invalid credentials" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -76,7 +61,7 @@ export async function POST(request) {
         upload_project: user?.upload_project,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
 
     const response = NextResponse.json(
@@ -94,7 +79,7 @@ export async function POST(request) {
           upload_project: user?.upload_project,
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
 
     // Set secure httpOnly cookie
@@ -111,7 +96,7 @@ export async function POST(request) {
     console.error("Login error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

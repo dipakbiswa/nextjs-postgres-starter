@@ -2,8 +2,8 @@ import nodemailer from "nodemailer";
 import crypto from "crypto";
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
+  host: process.env.EMAIL_HOST,
+  port: process.env.EMAIL_PORT,
   secure: true,
   auth: {
     user: process.env.EMAIL_USER,
@@ -19,12 +19,12 @@ export async function sendVerificationEmail(
   email,
   token,
   subject = "Verify Your Email",
-  path = "/verify-email"
+  path = "verify-email",
 ) {
   const verificationLink = `${process.env.NEXTAUTH_URL}/${path}?token=${token}`;
 
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"${process.env.NEXT_PUBLIC_APP_NAME}" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: subject,
     html: `
@@ -49,10 +49,10 @@ export async function sendQRCodeEmail(
   email,
   userName,
   qrCodeDataUrl,
-  eventName
+  eventName,
 ) {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"${process.env.NEXT_PUBLIC_APP_NAME}" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: `Event Registration - ${eventName}`,
     html: `
@@ -87,10 +87,10 @@ export async function sendQRCodeEmailOut(
   email,
   userName,
   qrCodeDataUrl,
-  eventName
+  eventName,
 ) {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"${process.env.NEXT_PUBLIC_APP_NAME}" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: `Event Check-out - ${eventName}`,
     html: `
@@ -124,10 +124,10 @@ export async function sendQRCodeEmailOut(
 export async function sendAccountApprovalEmail(
   email,
   name,
-  subject = `Account Approved - ${process.env.NEXT_PUBLIC_APP_NAME}`
+  subject = `Account Approved - ${process.env.NEXT_PUBLIC_APP_NAME}`,
 ) {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"${process.env.NEXT_PUBLIC_APP_NAME}" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: subject,
     html: `
@@ -150,10 +150,10 @@ export async function sendAccountApprovalEmail(
 export async function sendAccountRejectedEmail(
   email,
   name,
-  subject = `Account Status - ${process.env.NEXT_PUBLIC_APP_NAME}`
+  subject = `Account Status - ${process.env.NEXT_PUBLIC_APP_NAME}`,
 ) {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"${process.env.NEXT_PUBLIC_APP_NAME}" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: subject,
     html: `
@@ -177,10 +177,10 @@ export async function sendQuestionApprovalEmail(
   email,
   name,
   questionTitle,
-  subject = `Question Status - ${process.env.NEXT_PUBLIC_APP_NAME}`
+  subject = `Question Status - ${process.env.NEXT_PUBLIC_APP_NAME}`,
 ) {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"${process.env.NEXT_PUBLIC_APP_NAME}" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: subject,
     html: `
@@ -203,10 +203,10 @@ export async function sendQuestionRejectedEmail(
   email,
   name,
   questionTitle,
-  subject = `Question Status - ${process.env.NEXT_PUBLIC_APP_NAME}`
+  subject = `Question Status - ${process.env.NEXT_PUBLIC_APP_NAME}`,
 ) {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"${process.env.NEXT_PUBLIC_APP_NAME}" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: subject,
     html: `

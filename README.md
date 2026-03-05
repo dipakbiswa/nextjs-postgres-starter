@@ -102,16 +102,17 @@ DATABASE_CONNECTION_STRING=postgresql://username:password@localhost:5432/databas
 # JWT Secret (generate with: openssl rand -base64 32)
 JWT_SECRET=your-super-secret-jwt-key-min-32-characters
 
-# Email Configuration (Gmail SMTP)
+# Email SMTP Configuration
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-app-specific-password
+EMAIL_HOST=smtp.host.com
+EMAIL_PORT=465
+
+# Google OAuth
+GOOGLE_CLIENT_ID=8466666#####-**************.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=SPX-#####01v7HQbeU******
+GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
 ```
-
-**🔑 Gmail Setup:**
-
-1. Enable 2-Factor Authentication on your Google Account
-2. Generate an App Password: [Google Account Settings](https://myaccount.google.com/apppasswords)
-3. Use the 16-character app password in `EMAIL_PASS`
 
 ### 4. Database Setup
 
@@ -143,7 +144,7 @@ create table public.users (
   role character varying(5) null default 'user'::character varying,
   reset_token character varying(64) null,
   reset_token_expiry timestamp without time zone null,
-  is_approved integer not null default 1,
+  is_approved boolean not null default true,
   created_at timestamp with time zone not null default (now() AT TIME ZONE 'utc'::text),
   constraint users_pkey primary key (id),
   constraint users_email_key unique (email),
@@ -239,7 +240,7 @@ const users = await query("SELECT * FROM users WHERE role = $1", ["admin"]);
 // Insert data
 await query(
   "INSERT INTO users (email, name, password_hash) VALUES ($1, $2, $3)",
-  ["user@example.com", "John Doe", hashedPassword]
+  ["user@example.com", "John Doe", hashedPassword],
 );
 ```
 

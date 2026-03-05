@@ -14,6 +14,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Mail, Lock, AlertCircle } from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -21,10 +23,45 @@ export default function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    setMounted(true);
+
+    const oauthError = searchParams.get("error");
+    const errorMessage = searchParams.get("message");
+
+    if (oauthError) {
+      switch (oauthError) {
+        case "oauth_error":
+          setError(errorMessage || "OAuth authentication failed");
+          break;
+        case "no_code":
+          setError("OAuth authorization was cancelled");
+          break;
+        case "email_not_verified":
+          setError("Your Google email is not verified");
+          break;
+        case "oauth_callback_failed":
+          setError("OAuth callback failed. Please try again.");
+          break;
+        case "account_banned":
+          setError("Your account has been banned. Please contact support.");
+          break;
+        case "invalid_role":
+          setError("You are not registered as a user.");
+          break;
+        default:
+          setError("Authentication error occurred");
+      }
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,6 +90,17 @@ export default function LoginForm() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      setError("");
+      window.location.href = "/api/auth/google";
+    } catch (err) {
+      setError("Failed to initiate Google login");
+      setGoogleLoading(false);
+    }
+  };
+
   if (!mounted) {
     return null;
   }
@@ -75,6 +123,21 @@ export default function LoginForm() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+          {/* Social Login Buttons */}
+          <div className="flex gap-4 justify-center mb-6">
+            <Button
+              onClick={handleGoogleLogin}
+              disabled={loading || googleLoading}
+              className="w-full h-10 rounded-xl  transition-all hover:border-blue-500/50"
+            >
+              {googleLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-white" />
+              ) : (
+                <FcGoogle className="h-6 w-6" />
+              )}
+              Continue with Google
+            </Button>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

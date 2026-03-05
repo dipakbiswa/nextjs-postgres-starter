@@ -9,13 +9,13 @@ export async function POST(request) {
     if (!email) {
       return NextResponse.json(
         { message: "Email is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const userResult = await connection.query(
       "SELECT * FROM users WHERE email = $1 AND is_verified = true",
-      [email]
+      [email],
     );
 
     const users = userResult.rows;
@@ -23,7 +23,7 @@ export async function POST(request) {
     if (users.length === 0) {
       return NextResponse.json(
         { message: "No verified account found with this email" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -33,7 +33,7 @@ export async function POST(request) {
 
     await connection.query(
       "UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE email = $3",
-      [resetToken, tokenExpiry, email]
+      [resetToken, tokenExpiry, email],
     );
 
     // Send password reset email
@@ -41,18 +41,18 @@ export async function POST(request) {
       email,
       resetToken,
       "Reset Your Password",
-      "/reset-password"
+      "reset-password",
     );
 
     return NextResponse.json(
       { message: "Password reset link sent to your email" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Forgot password error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

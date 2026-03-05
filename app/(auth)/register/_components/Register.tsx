@@ -20,6 +20,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -32,6 +33,7 @@ export default function Register() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -99,7 +101,7 @@ export default function Register() {
       const data = await response.json();
       if (response.ok) {
         setSuccess(
-          "Registration successful! We've sent you a verification email. Please check your inbox and spam folder to complete the process."
+          "Registration successful! We've sent you a verification email. Please check your inbox and spam folder to complete the process.",
         );
         // Reset form
         setFormData({
@@ -116,6 +118,21 @@ export default function Register() {
       setError("Network error. Please try again");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    // if (!termsAccepted) {
+    //   setShowTermsPopup(true);
+    //   return;
+    // }
+    try {
+      setGoogleLoading(true);
+      setError("");
+      window.location.href = "/api/auth/google";
+    } catch (err) {
+      setError("Failed to initiate Google login");
+      setGoogleLoading(false);
     }
   };
 
@@ -147,6 +164,21 @@ export default function Register() {
               <AlertDescription>{success}</AlertDescription>
             </Alert>
           )}
+          {/* Social Login Buttons */}
+          <div className="flex gap-4 justify-center mb-6">
+            <Button
+              onClick={handleGoogleLogin}
+              disabled={loading || googleLoading}
+              className="w-full h-10 rounded-2xl  transition-all hover:border-blue-500/50"
+            >
+              {googleLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-white" />
+              ) : (
+                <FcGoogle className="h-6 w-6" />
+              )}
+              Continue with Google
+            </Button>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>

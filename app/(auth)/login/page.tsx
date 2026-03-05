@@ -1,11 +1,16 @@
 import LoginForm from "@/components/LoginForm";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 export default async function LoginPage() {
   const user = await getCurrentUser();
   if (user) {
     redirect("/dashboard");
   }
-  return <LoginForm />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
+  );
 }

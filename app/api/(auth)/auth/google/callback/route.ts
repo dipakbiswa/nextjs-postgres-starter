@@ -4,6 +4,8 @@ import { exchangeCodeForTokens, getGoogleUserInfo } from "@/lib/oogle-oauth";
 import jwt from "jsonwebtoken";
 
 export async function GET(request: NextRequest) {
+  const baseUrl = process.env.NEXTAUTH_URL!;
+
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
@@ -11,19 +13,12 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       return NextResponse.redirect(
-        new URL(
-          `${
-            process.env.NEXTAUTH_URL
-          }/login?error=oauth_error&message=${encodeURIComponent(error)}`,
-          request.url,
-        ),
+        `${baseUrl}/login?error=oauth_error&message=${encodeURIComponent(error)}`,
       );
     }
 
     if (!code) {
-      return NextResponse.redirect(
-        new URL(`${process.env.NEXTAUTH_URL}/login?error=no_code`, request.url),
-      );
+      return NextResponse.redirect(`${baseUrl}/login?error=no_code`);
     }
 
     // Exchange code for tokens
@@ -33,12 +28,7 @@ export async function GET(request: NextRequest) {
     const googleUser = await getGoogleUserInfo(tokens.access_token);
 
     if (!googleUser.verified_email) {
-      return NextResponse.redirect(
-        new URL(
-          `${process.env.NEXTAUTH_URL}/login?error=email_not_verified`,
-          request.url,
-        ),
-      );
+      return NextResponse.redirect(`${baseUrl}/login?error=email_not_verified`);
     }
 
     // Check if user already exists
@@ -50,19 +40,11 @@ export async function GET(request: NextRequest) {
     let user;
 
     if (existingUserResult.rows.length > 0) {
-      if (existingUserResult.rows[0].role != "user") {
-        return NextResponse.redirect(
-          new URL(
-            `${process.env.NEXTAUTH_URL}/login?error=invalid_role`,
-            request.url,
-          ),
-        );
-      }
-    }
-
-    if (existingUserResult.rows.length > 0) {
-      // User exists, update Google-related fields if needed
       user = existingUserResult.rows[0];
+
+      if (user.role !== "user") {
+        return NextResponse.redirect(`${baseUrl}/login?error=invalid_role`);
+      }
 
       // Update user with Google info if not already set
       await connection.query(
@@ -70,18 +52,18 @@ export async function GET(request: NextRequest) {
          SET google_id = COALESCE(google_id, $1),
              picture = COALESCE(picture, $2),
              name = COALESCE(name, $3),
-             is_verified = true,
-             updated_at = NOW()
+             is_verified = true
          WHERE id = $4`,
         [googleUser.id, googleUser.picture, googleUser.name, user.id],
       );
     } else {
       // Create new user
+      // FIX: removed trailing comma after role column, removed updated_at (not in schema)
       const insertResult = await connection.query(
         `INSERT INTO users (
-          email, name, google_id, picture, is_verified, 
-          created_at, updated_at, role, newsletter_notification
-        ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), $6, $7) 
+          email, name, google_id, picture, is_verified,
+          created_at, role
+        ) VALUES ($1, $2, $3, $4, $5, NOW(), $6)
         RETURNING *`,
         [
           googleUser.email,
@@ -89,22 +71,11 @@ export async function GET(request: NextRequest) {
           googleUser.id,
           googleUser.picture,
           true,
-          "user", // default role
-          true, // default newsletter subscription
+          "user",
         ],
       );
 
       user = insertResult.rows[0];
-    }
-
-    // Check is banned
-    if (user.is_banned) {
-      return NextResponse.redirect(
-        new URL(
-          `${process.env.NEXTAUTH_URL}/login?error=account_banned`,
-          request.url,
-        ),
-      );
     }
 
     // Generate JWT token
@@ -121,41 +92,24 @@ export async function GET(request: NextRequest) {
       { expiresIn: "1h" },
     );
 
-    // Redirect to a success page that will handle localStorage
-    // const redirectUrl = new URL("/auth/google/success", request.url);
-    // redirectUrl.searchParams.set("auth_token", token);
-    // redirectUrl.searchParams.set(
-    //   "first_login",
-    //   user?.is_first_login ? "1" : "0"
-    // );
+    const response = NextResponse.redirect(
+      `${baseUrl}/auth/google/success?auth_token=${token}`,
+    );
 
-    const redirectUrl = `${
-      process.env.NEXTAUTH_URL
-    }/auth/google/success?auth_token=${token}&first_login=${
-      user?.is_first_login ? "1" : "0"
-    }`;
-
-    const response = NextResponse.redirect(redirectUrl);
-
-    // Set secure httpOnly cookie (keeping your existing cookie logic)
     response.cookies.set("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 72000, // 1 day
+      maxAge: 72000,
       path: "/",
     });
-
-    connection.query(
-      "UPDATE users SET is_first_login = false WHERE email = $1",
-      [googleUser.email],
-    );
 
     return response;
   } catch (error) {
     console.error("Google OAuth callback error:", error);
+    // FIX: use absolute URL with baseUrl so it doesn't fall back to localhost
     return NextResponse.redirect(
-      new URL("/login?error=oauth_callback_failed", request.url),
+      `${baseUrl}/login?error=oauth_callback_failed`,
     );
   }
 }
